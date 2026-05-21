@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;450;550;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --animate-spin-slow: spin 20s linear infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer utilities {
+  .font-arabic {
+    font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', system-ui, serif;
+  }
+}
+

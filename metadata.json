@@ -1,0 +1,6 @@
+{
+  "name": "Hijri & Gregorian Calendar Converter & Age Calculator",
+  "description": "An elegant, highly-precise tool to convert dates between Hijri and Gregorian calendars, calculate age in both systems, and see full lunar alignment comparisons.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
