@@ -41,7 +41,7 @@ export function getDaysInGregorianMonth(year: number, month: number): number {
 }
 
 // High-fidelity converter using browser Intl API
-export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType = 'islamic-umalqura'): HijriDate {
+export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): HijriDate {
   try {
     const formatter = new Intl.DateTimeFormat(`en-US-u-ca-${calendarType}`, {
       year: 'numeric',
@@ -50,8 +50,9 @@ export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType
       timeZone: 'UTC'
     });
 
-    // Create Date strictly offset to UTC midnight to neutralize timezone transitions
-    const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    // Create Date strictly offset to UTC midnight to neutralize timezone transitions and apply offset
+    const shiftedDate = new Date(date.getTime() + hijriOffset * 24 * 60 * 60 * 1000);
+    const utcDate = new Date(Date.UTC(shiftedDate.getUTCFullYear(), shiftedDate.getUTCMonth(), shiftedDate.getUTCDate()));
     const parts = formatter.formatToParts(utcDate);
 
     let year = NaN;
@@ -76,36 +77,39 @@ export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType
   }
 
   // Fallback to Tabular civil algorithm if Intl is unavailable or fails
-  const jd = dateToJulian(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  const shiftedDate = new Date(date.getTime() + hijriOffset * 24 * 60 * 60 * 1000);
+  const jd = dateToJulian(shiftedDate.getUTCFullYear(), shiftedDate.getUTCMonth() + 1, shiftedDate.getUTCDate());
   return julianToHijri(jd);
 }
 
 // Converts Hijri to Gregorian using rapid Bisection / Binary search
-export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, calendarType: CalendarType = 'islamic-umalqura'): Date {
-  const estimatedYear = Math.floor(hYear * 0.97) + 579;
+export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): Date {
+  const estimatedGregorianFraction = (hYear - 1) * 0.970225 + (hMonth - 1) * 0.08085 + 622.54;
+  const estimatedYear = Math.floor(estimatedGregorianFraction);
+  const estimatedMonthFraction = estimatedGregorianFraction - estimatedYear;
+  const estimatedMonth = Math.max(0, Math.min(11, Math.floor(estimatedMonthFraction * 12)));
+  const estimatedDay = Math.max(1, Math.min(28, hDay));
   
-  // Create search boundaries (approx. 200 days range around estimate)
-  // Low limit: 120 days before estimated
-  // High limit: 120 days after estimated
-  const centerDate = new Date(Date.UTC(estimatedYear, hMonth - 1, Math.min(28, hDay)));
+  // Create search boundaries centered on highly precise estimate
+  const centerDate = new Date(Date.UTC(estimatedYear, estimatedMonth, estimatedDay, 12, 0, 0));
   const dayMs = 24 * 60 * 60 * 1000;
   const centerDays = Math.floor(centerDate.getTime() / dayMs);
   
-  let lowDays = centerDays - 150;
-  let highDays = centerDays + 150;
+  let lowDays = centerDays - 100;
+  let highDays = centerDays + 100;
   
-  let resultDays = centerDays;
-  let minDiff = Infinity;
   let bestCandidate = centerDays;
+  let minDiff = Infinity;
 
   // Binary search to find the Gregorian day that formats exactly to the target Hijri Date
   while (lowDays <= highDays) {
     const midDays = Math.floor((lowDays + highDays) / 2);
     const testDate = new Date(midDays * dayMs);
-    const h = getHijriDateFromGregorian(testDate, calendarType);
+    const h = getHijriDateFromGregorian(testDate, calendarType, 0); // Must use 0 offset inside the raw lookup
     
     if (h.year === hYear && h.month === hMonth && h.day === hDay) {
-      return new Date(midDays * dayMs);
+      const utcDate = new Date((midDays * dayMs) - hijriOffset * 24 * 60 * 60 * 1000);
+      return new Date(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate(), 12, 0, 0);
     }
     
     // Calculate difference metrics for approximation in case date is physically impossible (e.g. 30th day on a 29-day month)
@@ -138,18 +142,19 @@ export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, ca
     }
   }
   
-  // Return the closest matching physical date if exact target is impossible
-  return new Date(bestCandidate * dayMs);
+  // Return the closest matching physical date if exact target is impossible, applying offset
+  const closestUtcDate = new Date((bestCandidate * dayMs) - hijriOffset * 24 * 60 * 60 * 1000);
+  return new Date(closestUtcDate.getUTCFullYear(), closestUtcDate.getUTCMonth(), closestUtcDate.getUTCDate(), 12, 0, 0);
 }
 
 // Check how many days are in a given Hijri Month dynamics
-export function getDaysInHijriMonth(year: number, month: number, calendarType: CalendarType = 'islamic-umalqura'): number {
+export function getDaysInHijriMonth(year: number, month: number, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): number {
   if (month < 1 || month > 12) return 29;
   
-  const gCurrent = hijriToGregorian(year, month, 1, calendarType);
+  const gCurrent = hijriToGregorian(year, month, 1, calendarType, hijriOffset);
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextYear = month === 12 ? year + 1 : year;
-  const gNext = hijriToGregorian(nextYear, nextMonth, 1, calendarType);
+  const gNext = hijriToGregorian(nextYear, nextMonth, 1, calendarType, hijriOffset);
   
   const days = Math.round((gNext.getTime() - gCurrent.getTime()) / (24 * 60 * 60 * 1000));
   // Standard bounds are [29, 30]
@@ -220,9 +225,9 @@ export function calculateGregorianAge(birth: Date, end: Date): AgeResult {
 }
 
 // Calculate age in Hijri
-export function calculateHijriAge(birth: Date, end: Date, calendarType: CalendarType = 'islamic-umalqura'): AgeResult {
-  const hBirth = getHijriDateFromGregorian(birth, calendarType);
-  const hEnd = getHijriDateFromGregorian(end, calendarType);
+export function calculateHijriAge(birth: Date, end: Date, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): AgeResult {
+  const hBirth = getHijriDateFromGregorian(birth, calendarType, hijriOffset);
+  const hEnd = getHijriDateFromGregorian(end, calendarType, hijriOffset);
   
   let years = hEnd.year - hBirth.year;
   let months = hEnd.month - hBirth.month;
@@ -236,7 +241,7 @@ export function calculateHijriAge(birth: Date, end: Date, calendarType: Calendar
       prevMonth = 12;
       prevYear -= 1;
     }
-    const daysInPrev = getDaysInHijriMonth(prevYear, prevMonth, calendarType);
+    const daysInPrev = getDaysInHijriMonth(prevYear, prevMonth, calendarType, hijriOffset);
     days += daysInPrev;
   }
   
@@ -262,12 +267,12 @@ export function getNextGregorianBirthday(birth: Date, today: Date): { date: Date
 }
 
 // Countdown to the next Hijri anniversary birthdate
-export function getNextHijriBirthday(birth: Date, today: Date, calendarType: CalendarType = 'islamic-umalqura'): { date: Date, daysRemaining: number, hijriDate: HijriDate } {
-  const hBirth = getHijriDateFromGregorian(birth, calendarType);
-  const hToday = getHijriDateFromGregorian(today, calendarType);
+export function getNextHijriBirthday(birth: Date, today: Date, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): { date: Date, daysRemaining: number, hijriDate: HijriDate } {
+  const hBirth = getHijriDateFromGregorian(birth, calendarType, hijriOffset);
+  const hToday = getHijriDateFromGregorian(today, calendarType, hijriOffset);
   
   let targetHijriYear = hToday.year;
-  let targetGregorian = hijriToGregorian(targetHijriYear, hBirth.month, hBirth.day, calendarType);
+  let targetGregorian = hijriToGregorian(targetHijriYear, hBirth.month, hBirth.day, calendarType, hijriOffset);
   
   // If the birthday is in past in terms of physical solar time, step up year
   // Create midnight timestamps for solid comparisons
@@ -276,7 +281,7 @@ export function getNextHijriBirthday(birth: Date, today: Date, calendarType: Cal
   
   if (targetMidnight < todayMidnight) {
     targetHijriYear += 1;
-    targetGregorian = hijriToGregorian(targetHijriYear, hBirth.month, hBirth.day, calendarType);
+    targetGregorian = hijriToGregorian(targetHijriYear, hBirth.month, hBirth.day, calendarType, hijriOffset);
   }
   
   const targetMidnightFinal = new Date(targetGregorian.getFullYear(), targetGregorian.getMonth(), targetGregorian.getDate());

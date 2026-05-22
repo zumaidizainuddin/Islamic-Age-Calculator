@@ -15,9 +15,10 @@ import { Cake, Calendar, Timer, Sparkles, ArrowRightLeft, RefreshCw, CalendarDay
 
 interface AgeCalculatorProps {
   calendarType: CalendarType;
+  hijriOffset?: number;
 }
 
-export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
+export default function AgeCalculator({ calendarType, hijriOffset = 0 }: AgeCalculatorProps) {
   // Input mode: entering birthday in Gregorian ('g') or Hijri ('h')
   const [bdayInputMode, setBdayInputMode] = useState<'g' | 'h'>('g');
 
@@ -50,13 +51,13 @@ export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
   // 1) Solve Max Hijri Bday Days when Month/Year in Hijri input changes
   useEffect(() => {
     if (bdayInputMode === 'h') {
-      const days = getDaysInHijriMonth(hijriBdayYear, hijriBdayMonth, calendarType);
+      const days = getDaysInHijriMonth(hijriBdayYear, hijriBdayMonth, calendarType, hijriOffset);
       setMaxHijriBdayDays(days);
       if (hijriBdayDay > days) {
         setHijriBdayDay(days);
       }
     }
-  }, [hijriBdayYear, hijriBdayMonth, calendarType, bdayInputMode]);
+  }, [hijriBdayYear, hijriBdayMonth, calendarType, bdayInputMode, hijriOffset]);
 
   // 2) Resolve the actual Date and convert back and forth depending on selected entry mode
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
           const dateObj = new Date(year, month, day);
           setResolvedBday(dateObj);
           
-          const hBirth = getHijriDateFromGregorian(dateObj, calendarType);
+          const hBirth = getHijriDateFromGregorian(dateObj, calendarType, hijriOffset);
           setResolvedHijriBday(hBirth);
           
           // Keep Hijri input numbers synchronized for visual toggle consistency
@@ -81,7 +82,7 @@ export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
       }
     } else {
       // Hijri Input Mode
-      const gDate = hijriToGregorian(hijriBdayYear, hijriBdayMonth, hijriBdayDay, calendarType);
+      const gDate = hijriToGregorian(hijriBdayYear, hijriBdayMonth, hijriBdayDay, calendarType, hijriOffset);
       setResolvedBday(gDate);
       setResolvedHijriBday({ year: hijriBdayYear, month: hijriBdayMonth, day: hijriBdayDay });
 
@@ -91,7 +92,7 @@ export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
       const dd = String(gDate.getDate()).padStart(2, '0');
       setGregorianBday(`${yyyy}-${mm}-${dd}`);
     }
-  }, [gregorianBday, hijriBdayYear, hijriBdayMonth, hijriBdayDay, bdayInputMode, calendarType]);
+  }, [gregorianBday, hijriBdayYear, hijriBdayMonth, hijriBdayDay, bdayInputMode, calendarType, hijriOffset]);
 
   // 3) Perform age and countdown computations whenever resolved birthday changes
   useEffect(() => {
@@ -106,18 +107,18 @@ export default function AgeCalculator({ calendarType }: AgeCalculatorProps) {
       }
       
       const gAge = calculateGregorianAge(resolvedBday, today);
-      const hAge = calculateHijriAge(resolvedBday, today, calendarType);
+      const hAge = calculateHijriAge(resolvedBday, today, calendarType, hijriOffset);
       
       setGregorianAge(gAge);
       setHijriAge(hAge);
 
       const nextG = getNextGregorianBirthday(resolvedBday, today);
-      const nextH = getNextHijriBirthday(resolvedBday, today, calendarType);
+      const nextH = getNextHijriBirthday(resolvedBday, today, calendarType, hijriOffset);
 
       setNextGregBday(nextG);
       setNextHijriBday(nextH);
     }
-  }, [resolvedBday, today, calendarType]);
+  }, [resolvedBday, today, calendarType, hijriOffset]);
 
   const handleInputModeToggle = () => {
     setBdayInputMode((prev) => (prev === 'g' ? 'h' : 'g'));

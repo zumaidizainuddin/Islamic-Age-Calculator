@@ -5,9 +5,10 @@ import { ArrowLeftRight, Calendar as CalendarIcon, Info, HelpCircle } from 'luci
 
 interface DateConverterProps {
   calendarType: CalendarType;
+  hijriOffset?: number;
 }
 
-export default function DateConverter({ calendarType }: DateConverterProps) {
+export default function DateConverter({ calendarType, hijriOffset = 0 }: DateConverterProps) {
   // Mode state: 'g2h' (Gregorian to Hijri) vs 'h2g' (Hijri to Gregorian)
   const [conversionMode, setConversionMode] = useState<'g2h' | 'h2g'>('g2h');
 
@@ -43,29 +44,29 @@ export default function DateConverter({ calendarType }: DateConverterProps) {
         
         if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
           const dateObj = new Date(year, month, day);
-          const hDate = getHijriDateFromGregorian(dateObj, calendarType);
+          const hDate = getHijriDateFromGregorian(dateObj, calendarType, hijriOffset);
           setConvertedHijri(hDate);
         }
       }
     }
-  }, [gregorianInput, calendarType]);
+  }, [gregorianInput, calendarType, hijriOffset]);
 
   // Dynamically update max days for Hijri input month/year to prevent choosing invalid days
   useEffect(() => {
-    const days = getDaysInHijriMonth(hijriInputYear, hijriInputMonth, calendarType);
+    const days = getDaysInHijriMonth(hijriInputYear, hijriInputMonth, calendarType, hijriOffset);
     setMaxHijriDays(days);
     if (hijriInputDay > days) {
       setHijriInputDay(days);
     }
-  }, [hijriInputYear, hijriInputMonth, calendarType]);
+  }, [hijriInputYear, hijriInputMonth, calendarType, hijriOffset]);
 
   // Run conversion whenever Hijri inputs change
   useEffect(() => {
     if (hijriInputYear && hijriInputMonth && hijriInputDay) {
-      const gDate = hijriToGregorian(hijriInputYear, hijriInputMonth, hijriInputDay, calendarType);
+      const gDate = hijriToGregorian(hijriInputYear, hijriInputMonth, hijriInputDay, calendarType, hijriOffset);
       setConvertedGregorian(gDate);
     }
-  }, [hijriInputYear, hijriInputMonth, hijriInputDay, calendarType, maxHijriDays]);
+  }, [hijriInputYear, hijriInputMonth, hijriInputDay, calendarType, maxHijriDays, hijriOffset]);
 
   const toggleMode = () => {
     setConversionMode((prev) => (prev === 'g2h' ? 'h2g' : 'g2h'));

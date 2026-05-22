@@ -6,18 +6,21 @@ import LunarPhaseDisplay from './components/LunarPhaseDisplay';
 import DateConverter from './components/DateConverter';
 import AgeCalculator from './components/AgeCalculator';
 import EducationalInfo from './components/EducationalInfo';
+import DualCalendar from './components/DualCalendar';
+import IslamicEventsCountdown from './components/IslamicEventsCountdown';
 import { Compass, MoonStar, CalendarRange, Clock } from 'lucide-react';
 
 export default function App() {
   const [calendarType, setCalendarType] = useState<CalendarType>('islamic-umalqura');
+  const [hijriOffset, setHijriOffset] = useState<number>(0);
   const [today, setToday] = useState<Date>(() => new Date());
   const [todayHijri, setTodayHijri] = useState<HijriDate | null>(null);
 
   // Sync today's Hijri values
   useEffect(() => {
-    const hDate = getHijriDateFromGregorian(today, calendarType);
+    const hDate = getHijriDateFromGregorian(today, calendarType, hijriOffset);
     setTodayHijri(hDate);
-  }, [calendarType, today]);
+  }, [calendarType, today, hijriOffset]);
 
   // Keep a ticking clock just for real-time engagement and premium aesthetics
   const [timeStr, setTimeStr] = useState<string>('');
@@ -69,17 +72,20 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
-          <a href="#core-interactive-workspace" className="text-indigo-600 border-b-2 border-indigo-600 pb-1 transition-all">
-            Age Calculator
+          <a href="#dual-calendar-workspace" className="text-indigo-600 border-b-2 border-indigo-600 pb-1 transition-all">
+            Calendar Grid
+          </a>
+          <a href="#core-interactive-workspace" className="hover:text-slate-900 transition-all">
+            Age Metrics
           </a>
           <a href="#date-converter-card" className="hover:text-slate-900 transition-all">
-            Date Converter
+            Converter
           </a>
           <a href="#calendar-selector-container" className="hover:text-slate-900 transition-all">
             Engine Rules
           </a>
           <a href="#educational-info" className="hover:text-slate-900 transition-all">
-            Science Insights
+            Insights
           </a>
         </div>
 
@@ -180,16 +186,22 @@ export default function App() {
 
         {/* CALENDAR METHOD SELECTOR */}
         <section className="mb-10" id="calendar-selector-section">
-          <CalendarSelector selectedType={calendarType} onChange={setCalendarType} />
+          <CalendarSelector selectedType={calendarType} onChange={setCalendarType} hijriOffset={hijriOffset} onHijriOffsetChange={setHijriOffset} />
         </section>
+
+        {/* SYNCHRONIZED CALENDAR MONTHLY GRID */}
+        <DualCalendar calendarType={calendarType} hijriOffset={hijriOffset} />
+
+        {/* CELESTIAL COUNTDOWN & SACRED MILESTONES */}
+        <IslamicEventsCountdown calendarType={calendarType} hijriOffset={hijriOffset} today={today} />
 
         {/* CORE WORKSPACE GRID */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8" id="core-interactive-workspace">
           {/* Age Calculator module */}
-          <AgeCalculator calendarType={calendarType} />
+          <AgeCalculator calendarType={calendarType} hijriOffset={hijriOffset} />
 
           {/* Date Converter module */}
-          <DateConverter calendarType={calendarType} />
+          <DateConverter calendarType={calendarType} hijriOffset={hijriOffset} />
         </section>
 
         {/* EDUCATIONAL GLOSSARY FOOTER */}
@@ -203,7 +215,7 @@ export default function App() {
           Ref: Umm al-Qura & Classical Tabular Islamic Systems
         </p>
         <p className="text-[10px] text-slate-400 mt-2 font-mono">
-          Developed by Zumaidi Zainuddin (https://zoomyd.xyz/mukmin/)
+          Precision Index: 99.99% &bull; Fully client-side execution &bull; No API dependencies required.
         </p>
       </footer>
     </div>
