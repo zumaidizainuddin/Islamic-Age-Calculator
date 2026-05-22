@@ -50,9 +50,9 @@ export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType
       timeZone: 'UTC'
     });
 
-    // Create Date strictly offset to UTC midnight to neutralize timezone transitions and apply offset
-    const shiftedDate = new Date(date.getTime() + hijriOffset * 24 * 60 * 60 * 1000);
-    const utcDate = new Date(Date.UTC(shiftedDate.getUTCFullYear(), shiftedDate.getUTCMonth(), shiftedDate.getUTCDate()));
+    // Create Date strictly offset by hijriOffset days using local date parts to avoid timezone shift
+    const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + hijriOffset);
+    const utcDate = new Date(Date.UTC(shiftedDate.getFullYear(), shiftedDate.getMonth(), shiftedDate.getDate()));
     const parts = formatter.formatToParts(utcDate);
 
     let year = NaN;
@@ -77,8 +77,8 @@ export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType
   }
 
   // Fallback to Tabular civil algorithm if Intl is unavailable or fails
-  const shiftedDate = new Date(date.getTime() + hijriOffset * 24 * 60 * 60 * 1000);
-  const jd = dateToJulian(shiftedDate.getUTCFullYear(), shiftedDate.getUTCMonth() + 1, shiftedDate.getUTCDate());
+  const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + hijriOffset);
+  const jd = dateToJulian(shiftedDate.getFullYear(), shiftedDate.getMonth() + 1, shiftedDate.getDate());
   return julianToHijri(jd);
 }
 
@@ -90,26 +90,24 @@ export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, ca
   const estimatedMonth = Math.max(0, Math.min(11, Math.floor(estimatedMonthFraction * 12)));
   const estimatedDay = Math.max(1, Math.min(28, hDay));
   
-  // Create search boundaries centered on highly precise estimate
-  const centerDate = new Date(Date.UTC(estimatedYear, estimatedMonth, estimatedDay, 12, 0, 0));
-  const dayMs = 24 * 60 * 60 * 1000;
-  const centerDays = Math.floor(centerDate.getTime() / dayMs);
+  // Create search boundaries centered on highly precise estimate using local Date
+  const centerDate = new Date(estimatedYear, estimatedMonth, estimatedDay, 12, 0, 0);
   
-  let lowDays = centerDays - 100;
-  let highDays = centerDays + 100;
+  let lowDays = -100;
+  let highDays = 100;
   
-  let bestCandidate = centerDays;
+  let bestCandidate = 0;
   let minDiff = Infinity;
 
   // Binary search to find the Gregorian day that formats exactly to the target Hijri Date
   while (lowDays <= highDays) {
     const midDays = Math.floor((lowDays + highDays) / 2);
-    const testDate = new Date(midDays * dayMs);
+    const testDate = new Date(estimatedYear, estimatedMonth, estimatedDay + midDays, 12, 0, 0);
     const h = getHijriDateFromGregorian(testDate, calendarType, 0); // Must use 0 offset inside the raw lookup
     
     if (h.year === hYear && h.month === hMonth && h.day === hDay) {
-      const utcDate = new Date((midDays * dayMs) - hijriOffset * 24 * 60 * 60 * 1000);
-      return new Date(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate(), 12, 0, 0);
+      // Return a local Date representation at 12:00:00 (midday) and apply offset
+      return new Date(estimatedYear, estimatedMonth, estimatedDay + midDays - hijriOffset, 12, 0, 0);
     }
     
     // Calculate difference metrics for approximation in case date is physically impossible (e.g. 30th day on a 29-day month)
@@ -143,8 +141,7 @@ export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, ca
   }
   
   // Return the closest matching physical date if exact target is impossible, applying offset
-  const closestUtcDate = new Date((bestCandidate * dayMs) - hijriOffset * 24 * 60 * 60 * 1000);
-  return new Date(closestUtcDate.getUTCFullYear(), closestUtcDate.getUTCMonth(), closestUtcDate.getUTCDate(), 12, 0, 0);
+  return new Date(estimatedYear, estimatedMonth, estimatedDay + bestCandidate - hijriOffset, 12, 0, 0);
 }
 
 // Check how many days are in a given Hijri Month dynamics

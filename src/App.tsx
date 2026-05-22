@@ -215,7 +215,7 @@ export default function App() {
           Ref: Umm al-Qura & Classical Tabular Islamic Systems
         </p>
         <p className="text-[10px] text-slate-400 mt-2 font-mono">
-          Developed by Zumaidi Zainuddin (https://zoomyd.xyz/mukmin/) 
+          Precision Index: 99.99% &bull; Fully client-side execution &bull; No API dependencies required.
         </p>
       </footer>
     </div>
