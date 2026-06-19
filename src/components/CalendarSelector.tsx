@@ -1,38 +1,40 @@
 import React from 'react';
-import { CalendarType, CalendarOption } from '../types';
-import { Sparkles, Calendar, BookOpen } from 'lucide-react';
-
-export const CALENDAR_VARIATION_OPTIONS: CalendarOption[] = [
-  {
-    id: 'islamic-umalqura',
-    name: 'Umm al-Qura',
-    description: 'Astronomical calculations optimized for modern Saudi & Gulf region sightings. Essential for contemporary accuracy.'
-  },
-  {
-    id: 'islamic-jakim',
-    name: 'JAKIM Malaysia (MABIMS)',
-    description: 'Calibrated to Jabatan Kemajuan Islam Malaysia and MABIMS regional sighting criteria (Altitude ≥ 3°, Elongation ≥ 6.4°).'
-  },
-  {
-    id: 'islamic-civil',
-    name: 'Islamic Civil (Tabular)',
-    description: 'Classically computed tabular calendar utilizing a Friday epoch. Excellent for historical records.'
-  },
-  {
-    id: 'islamic-tbla',
-    name: 'Tabular Astronomical',
-    description: 'Strictly mathematical calendar using a Thursday epoch, commonly referenced in astronomic computations.'
-  }
-];
+import { CalendarType, CalendarOption, AppLanguage } from '../types';
+import { Sparkles, Calendar } from 'lucide-react';
+import { getTranslation } from '../utils/langUtils';
 
 interface CalendarSelectorProps {
   selectedType: CalendarType;
   onChange: (type: CalendarType) => void;
   hijriOffset: number;
   onHijriOffsetChange: (offset: number) => void;
+  lang: AppLanguage;
 }
 
-export default function CalendarSelector({ selectedType, onChange, hijriOffset, onHijriOffsetChange }: CalendarSelectorProps) {
+export default function CalendarSelector({ selectedType, onChange, hijriOffset, onHijriOffsetChange, lang }: CalendarSelectorProps) {
+  const variationOptions = [
+    {
+      id: 'islamic-umalqura' as CalendarType,
+      name: getTranslation('selector.umalqura.name', lang, 'Umm al-Qura'),
+      description: getTranslation('selector.umalqura.desc', lang, 'Umm al-Qura standard')
+    },
+    {
+      id: 'islamic-jakim' as CalendarType,
+      name: getTranslation('selector.jakim.name', lang, 'JAKIM Malaysia (MABIMS)'),
+      description: getTranslation('selector.jakim.desc', lang, 'JAKIM standard')
+    },
+    {
+      id: 'islamic-civil' as CalendarType,
+      name: getTranslation('selector.civil.name', lang, 'Islamic Civil (Tabular)'),
+      description: getTranslation('selector.civil.desc', lang, 'Islamic Civil tabular')
+    },
+    {
+      id: 'islamic-tbla' as CalendarType,
+      name: getTranslation('selector.tbla.name', lang, 'Tabular Classical (Tbla)'),
+      description: getTranslation('selector.tbla.desc', lang, 'Classical tabular')
+    }
+  ];
+
   return (
     <div id="calendar-selector-container" className="bg-white rounded-xs border border-slate-200 shadow-xs p-6 transition-all duration-300">
       <div className="flex items-center gap-3.5 mb-5 pb-3 border-b border-slate-100">
@@ -40,13 +42,17 @@ export default function CalendarSelector({ selectedType, onChange, hijriOffset, 
           <Calendar className="w-5 h-5 font-bold" id="calendar-selector-icon" />
         </div>
         <div>
-          <h2 className="text-sm font-black uppercase tracking-[0.18em] text-slate-900">Hijri Calendar Sub-Engine</h2>
-          <p className="text-xs text-slate-500">Pick the exact computation ruleset for Islamic dates</p>
+          <h2 className="text-sm font-black uppercase tracking-[0.18em] text-slate-900">
+            {getTranslation('selector.title', lang, 'Calendar Engine Configuration')}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {getTranslation('selector.subtitle', lang, 'Select computation ruleset for Islamic dates')}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        {CALENDAR_VARIATION_OPTIONS.map((option) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {variationOptions.map((option) => {
           const isSelected = selectedType === option.id;
           return (
             <button
@@ -83,10 +89,10 @@ export default function CalendarSelector({ selectedType, onChange, hijriOffset, 
           <div>
             <h3 className="text-xs font-black uppercase tracking-[0.15em] text-slate-950 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-indigo-600 font-bold" />
-              Hilal Moon Sighting Adjustment
+              {getTranslation('selector.offsetLabel', lang, 'Manual Adjustment (Days)')}
             </h3>
             <p className="text-[11px] text-slate-500 max-w-xl font-light mt-1">
-              Local atmospheric visualization or direct crescent observation often shifts the 1st of the Hijri month by ±1 to ±2 days. Apply coefficients globally to align calculations.
+              {getTranslation('selector.offsetHelp', lang, 'Local atmospheric visualization or direct crescent observation often shifts the 1st of the Hijri month.')}
             </p>
           </div>
           <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xs border border-slate-200">

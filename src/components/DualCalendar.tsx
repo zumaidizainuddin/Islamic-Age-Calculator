@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarType, HijriDate } from '../types';
+import { CalendarType, HijriDate, AppLanguage } from '../types';
 import {
   getHijriDateFromGregorian,
   getLunarPhaseInfo,
@@ -19,13 +19,15 @@ import {
   Trophy,
   ArrowRight
 } from 'lucide-react';
+import { getTranslation } from '../utils/langUtils';
 
 interface DualCalendarProps {
   calendarType: CalendarType;
   hijriOffset?: number;
+  lang: AppLanguage;
 }
 
-export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCalendarProps) {
+export default function DualCalendar({ calendarType, hijriOffset = 0, lang }: DualCalendarProps) {
   const today = new Date();
   
   // Selection mode for primary calendar display
@@ -81,6 +83,22 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
 
   const getFirstDayOfWeek = (year: number, month: number) => {
     return new Date(year, month - 1, 1).getDay();
+  };
+
+  const getHijriMonthName = (mIdx: number) => {
+    if (mIdx < 0 || mIdx > 11) return '';
+    return getTranslation(`month.h${mIdx + 1}`, lang, HIJRI_MONTHS[mIdx]?.name || '');
+  };
+
+  const getGregorianMonthName = (mIdx: number) => {
+    if (mIdx < 0 || mIdx > 11) return '';
+    return getTranslation(`month.g${mIdx + 1}`, lang, GREGORIAN_MONTHS[mIdx]?.name || '');
+  };
+
+  const weekdaysKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const getWeekdayShortName = (dayIdx: number) => {
+    if (dayIdx < 0 || dayIdx > 6) return '';
+    return getTranslation(`day.${weekdaysKeys[dayIdx]}`, lang).substring(0, 3);
   };
 
   // Resolve grid dimensions and properties driven by Main Display setting
@@ -456,8 +474,8 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-slate-950">
                 {mainDisplay === 'gregorian'
-                  ? `${GREGORIAN_MONTHS[currentMonth - 1]?.name} ${currentYear}`
-                  : `${HIJRI_MONTHS[currentHijriMonth - 1]?.name} ${currentHijriYear} AH`}
+                  ? `${getGregorianMonthName(currentMonth - 1)} ${currentYear}`
+                  : `${getHijriMonthName(currentHijriMonth - 1)} ${currentHijriYear} AH`}
               </span>
               <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-750 px-2.5 py-0.5 rounded-xs font-mono font-bold">
                 {monthSpanText}
@@ -468,8 +486,8 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-slate-950">
                 WEEK {activeWeekIndex + 1} &bull; {mainDisplay === 'gregorian'
-                  ? `${GREGORIAN_MONTHS[currentMonth - 1]?.name} ${currentYear}`
-                  : `${HIJRI_MONTHS[currentHijriMonth - 1]?.name} ${currentHijriYear} AH`}
+                  ? `${getGregorianMonthName(currentMonth - 1)} ${currentYear}`
+                  : `${getHijriMonthName(currentHijriMonth - 1)} ${currentHijriYear} AH`}
               </span>
               <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-750 px-2.5 py-0.5 rounded-xs font-mono font-bold">
                 {currentWeekDays.filter(c => !c.isPadding).length} Synced Day Cards
@@ -545,7 +563,7 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
               {(mainDisplay === 'gregorian' ? GREGORIAN_MONTHS : HIJRI_MONTHS).map((m) => {
                 return (
                   <option key={m.index} value={m.index}>
-                    {m.name.toUpperCase()}
+                    {mainDisplay === 'gregorian' ? getGregorianMonthName(m.index - 1).toUpperCase() : getHijriMonthName(m.index - 1).toUpperCase()}
                   </option>
                 );
               })}
@@ -745,14 +763,14 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
             {/* Calendar Weekday titles */}
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center mb-2">
               {(isFirstDayStart
-                ? [...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(firstDayOfWeekIndex), ...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].slice(0, firstDayOfWeekIndex)]
-                : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-              ).map((day) => (
+                ? [...[0, 1, 2, 3, 4, 5, 6].slice(firstDayOfWeekIndex), ...[0, 1, 2, 3, 4, 5, 6].slice(0, firstDayOfWeekIndex)]
+                : [0, 1, 2, 3, 4, 5, 6]
+              ).map((dayIdx) => (
                 <div
-                  key={day}
+                  key={dayIdx}
                   className="text-[10px] font-mono font-black uppercase tracking-wider text-slate-400 py-1"
                 >
-                  {day}
+                  {getWeekdayShortName(dayIdx)}
                 </div>
               ))}
             </div>
@@ -824,14 +842,14 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
                         {/* Show abbreviated auxiliary month context on day 1 or grid row start */}
                         {mainDisplay === 'gregorian' ? (
                           (hDate.day === 1 || gregDay === 1) && (
-                            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-indigo-600 font-sans truncate max-w-[40px] sm:max-w-[60px]" title={hijriMonthObj?.name}>
-                              {hijriMonthObj?.name.substring(0, 4)}.
+                            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-indigo-600 font-sans truncate max-w-[40px] sm:max-w-[60px]" title={getHijriMonthName(hDate.month - 1)}>
+                              {getHijriMonthName(hDate.month - 1).substring(0, 4)}.
                             </span>
                           )
                         ) : (
                           (hDate.day === 1 || gregDay === 1) && (
-                            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-emerald-605 font-sans truncate max-w-[40px] sm:max-w-[60px]" title={gregMonthObj?.name}>
-                              {gregMonthObj?.name.substring(0, 4)}.
+                            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-emerald-605 font-sans truncate max-w-[40px] sm:max-w-[60px]" title={getGregorianMonthName(dObj.getMonth())}>
+                              {getGregorianMonthName(dObj.getMonth()).substring(0, 4)}.
                             </span>
                           )
                         )}
@@ -840,7 +858,7 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
                       {/* Moon Icon / Emoji */}
                       <span
                         className="text-xs sm:text-base cursor-default select-none transition-transform hover:scale-125"
-                        title={`${hijriMonthObj?.name} ${hDate.day} AH / ${gregMonthObj?.name} ${gregDay}`}
+                        title={`${getHijriMonthName(hDate.month - 1)} ${hDate.day} AH / ${getGregorianMonthName(dObj.getMonth())} ${gregDay}`}
                       >
                         {moonEmoji}
                       </span>
@@ -867,9 +885,9 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
               </span>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider leading-snug mb-3">
                 {mainDisplay === 'gregorian'
-                  ? `${GREGORIAN_MONTHS[currentMonth - 1]?.name} ${currentYear}`
-                  : `${HIJRI_MONTHS[currentHijriMonth - 1]?.name} ${currentHijriYear} AH`}{' '}
-                Overview
+                  ? `${getGregorianMonthName(currentMonth - 1)} ${currentYear}`
+                  : `${getHijriMonthName(currentHijriMonth - 1)} ${currentHijriYear} AH`}{' '}
+                {getTranslation('cal.syncView', lang, 'Overview')}
               </h3>
 
               {/* Metrics Checklist */}
@@ -953,7 +971,7 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
             const mNum = monthIdx + 1;
             
             if (mainDisplay === 'gregorian') {
-              const mName = GREGORIAN_MONTHS[monthIdx]?.name || '';
+              const mName = getGregorianMonthName(monthIdx);
               const mDaysCount = getDaysInMonth(currentYear, mNum);
               const mFirstDay = getFirstDayOfWeek(currentYear, mNum);
 
@@ -971,8 +989,8 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
               const fmHijri = getHijriDateFromGregorian(fmDate, calendarType, hijriOffset);
               const lmHijri = getHijriDateFromGregorian(lmDate, calendarType, hijriOffset);
               const spanningText = fmHijri.month === lmHijri.month
-                ? `${HIJRI_MONTHS[fmHijri.month - 1]?.name.substring(0, 4)}.`
-                : `${HIJRI_MONTHS[fmHijri.month - 1]?.name.substring(0, 3)} - ${HIJRI_MONTHS[lmHijri.month - 1]?.name.substring(0, 3)}`;
+                ? `${getHijriMonthName(fmHijri.month - 1).substring(0, 4)}.`
+                : `${getHijriMonthName(fmHijri.month - 1).substring(0, 3)} - ${getHijriMonthName(lmHijri.month - 1).substring(0, 3)}`;
 
               return (
                 <div
@@ -1045,7 +1063,7 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
               );
             } else {
               // HIJRI YEARLY DISPLAY MODE
-              const mName = HIJRI_MONTHS[monthIdx]?.name || '';
+              const mName = getHijriMonthName(monthIdx);
               const mArabic = HIJRI_MONTHS[monthIdx]?.arabicName || '';
               const mDaysCount = getDaysInHijriMonth(currentHijriYear, mNum, calendarType, hijriOffset);
               const firstDayDateOfM = hijriToGregorian(currentHijriYear, mNum, 1, calendarType, hijriOffset);
@@ -1061,8 +1079,8 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
 
               // Est Gregorian months spanned by that Hijri month
               const lmDate = hijriToGregorian(currentHijriYear, mNum, mDaysCount, calendarType, hijriOffset);
-              const fGregMonth = GREGORIAN_MONTHS[firstDayDateOfM.getMonth()]?.name.substring(0, 3);
-              const lGregMonth = GREGORIAN_MONTHS[lmDate.getMonth()]?.name.substring(0, 3);
+              const fGregMonth = getGregorianMonthName(firstDayDateOfM.getMonth()).substring(0, 3);
+              const lGregMonth = getGregorianMonthName(lmDate.getMonth()).substring(0, 3);
               const spanningText = firstDayDateOfM.getMonth() === lmDate.getMonth()
                 ? `${fGregMonth}.`
                 : `${fGregMonth} - ${lGregMonth}`;
@@ -1126,7 +1144,7 @@ export default function DualCalendar({ calendarType, hijriOffset = 0 }: DualCale
                               ? 'bg-indigo-50 text-indigo-700'
                               : 'text-slate-400'
                           }`}
-                          title={`H. ${mName} ${day} / ${GREGORIAN_MONTHS[tempD.getMonth()]?.name} ${tempD.getDate()}`}
+                          title={`H. ${mName} ${day} / ${getGregorianMonthName(tempD.getMonth())} ${tempD.getDate()}`}
                         >
                           {day}
                         </div>

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarType, HijriDate } from '../types';
+import { CalendarType, HijriDate, AppLanguage } from '../types';
 import { getHijriDateFromGregorian, hijriToGregorian, getDaysInHijriMonth, HIJRI_MONTHS, GREGORIAN_MONTHS, hijriToJulian } from '../utils/calendarUtils';
-import { ArrowLeftRight, Calendar as CalendarIcon, Info, HelpCircle } from 'lucide-react';
+import { ArrowLeftRight, Info } from 'lucide-react';
+import { getTranslation } from '../utils/langUtils';
 
 interface DateConverterProps {
   calendarType: CalendarType;
   hijriOffset?: number;
+  lang: AppLanguage;
 }
 
-export default function DateConverter({ calendarType, hijriOffset = 0 }: DateConverterProps) {
+export default function DateConverter({ calendarType, hijriOffset = 0, lang }: DateConverterProps) {
   // Mode state: 'g2h' (Gregorian to Hijri) vs 'h2g' (Hijri to Gregorian)
   const [conversionMode, setConversionMode] = useState<'g2h' | 'h2g'>('g2h');
 
@@ -74,7 +76,17 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
 
   // Safe formatting of the weekday name
   const getWeekdayName = (date: Date) => {
-    return date.toLocaleDateString('en-US', { weekday: 'long' });
+    const dayIndex = date.getDay();
+    const weekdays = [
+      getTranslation('day.sunday', lang, 'Sunday'),
+      getTranslation('day.monday', lang, 'Monday'),
+      getTranslation('day.tuesday', lang, 'Tuesday'),
+      getTranslation('day.wednesday', lang, 'Wednesday'),
+      getTranslation('day.thursday', lang, 'Thursday'),
+      getTranslation('day.friday', lang, 'Friday'),
+      getTranslation('day.saturday', lang, 'Saturday')
+    ];
+    return weekdays[dayIndex];
   };
 
   const getArabicWeekdayName = (gDate: Date) => {
@@ -91,6 +103,14 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
     return weekdays[dayIndex];
   };
 
+  const getHijriMonthName = (mIdx: number) => {
+    return getTranslation(`month.h${mIdx + 1}`, lang, HIJRI_MONTHS[mIdx]?.name || '');
+  };
+
+  const getGregorianMonthName = (mIdx: number) => {
+    return getTranslation(`month.g${mIdx + 1}`, lang, GREGORIAN_MONTHS[mIdx]?.name || '');
+  };
+
   return (
     <div id="date-converter-card" className="bg-white rounded-xs border border-slate-200 shadow-xs p-6 flex flex-col h-full animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-3 border-b border-slate-100">
@@ -99,8 +119,12 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
             <ArrowLeftRight className="w-5 h-5 font-bold" id="date-converter-icon" />
           </div>
           <div>
-            <h2 className="text-sm font-black uppercase tracking-[0.18em] text-slate-900">Bidirectional Converter</h2>
-            <p className="text-xs text-slate-500">Astronomical coordinate conversion engine</p>
+            <h2 className="text-sm font-black uppercase tracking-[0.18em] text-slate-900">
+              {getTranslation('conv.title', lang, 'Bidirectional Converter')}
+            </h2>
+            <p className="text-xs text-slate-500">
+              {getTranslation('conv.desc', lang, 'Astronomical coordinate conversion engine')}
+            </p>
           </div>
         </div>
 
@@ -109,7 +133,9 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
           onClick={toggleMode}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-indigo-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-xs transition-colors cursor-pointer"
         >
-          {conversionMode === 'g2h' ? 'Switch to Hijri➔Gregorian' : 'Switch to Gregorian➔Hijri'}
+          {conversionMode === 'g2h' 
+            ? getTranslation('conv.hToG', lang, 'Switch to Hijri➔Gregorian') 
+            : getTranslation('conv.gToH', lang, 'Switch to Gregorian➔Hijri')}
         </button>
       </div>
 
@@ -117,8 +143,8 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
         /* GREGORIAN TO HIJRI SECTION */
         <div id="gregorian-to-hijri-workspace" className="flex-1 flex flex-col justify-between space-y-6">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-              Select Solar Gregorian Date
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 font-sans">
+              {getTranslation('conv.selectG', lang, 'Select Solar Gregorian Date')}
             </label>
             <div className="relative">
               <input
@@ -128,7 +154,7 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
                 max="2199-12-31"
                 value={gregorianInput}
                 onChange={(e) => setGregorianInput(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xs focus:outline-none focus:ring-2 focus:ring-indigo-505 focus:border-indigo-500 text-slate-850 text-xs font-semibold font-mono"
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xs focus:outline-none focus:ring-2 focus:ring-indigo-505 focus:border-indigo-505 text-slate-850 text-xs font-semibold font-mono"
               />
             </div>
             <div className="mt-3 flex items-start gap-1.5">
@@ -139,21 +165,21 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
             </div>
           </div>
 
-          <div className="bg-indigo-50/45 rounded-xs border border-indigo-155 p-5 mt-auto">
+          <div className="bg-indigo-50/20 rounded-xs border border-indigo-155 p-5 mt-auto">
             <span className="text-[9px] font-mono tracking-widest font-black text-indigo-600 uppercase">
-              Resulting Hijri Date Equivalent
+              {getTranslation('conv.result', lang, 'Resulting Hijri Date Equivalent')}
             </span>
             {convertedHijri && (
               <div className="mt-2" id="converted-hijri-result-box">
                 <span className="block text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                  {convertedHijri.day} {HIJRI_MONTHS[convertedHijri.month - 1]?.name} {convertedHijri.year} AH
+                  {convertedHijri.day} {getHijriMonthName(convertedHijri.month - 1)} {convertedHijri.year} AH
                 </span>
                 
                 <span className="block text-sm font-semibold text-indigo-805 mt-2 font-arabic leading-relaxed text-right" dir="rtl">
-                  {convertedHijri.day} {HIJRI_MONTHS[convertedHijri.month - 1]?.arabicName} {convertedHijri.year} هـ
+                  {convertedHijri.day} {HIJRI_MONTHS[convertedHijri.month - 1]?.arabicName || ''} {convertedHijri.year} هـ
                 </span>
 
-                <div className="mt-4 pt-3 border-t border-indigo-150 grid grid-cols-2 gap-4">
+                <div className="mt-4 pt-3 border-t border-indigo-150 grid grid-cols-2 gap-4 col-span-2">
                   <div>
                     <span className="block text-[9px] text-indigo-600 font-extrabold uppercase tracking-wide">
                       Day of Week
@@ -180,8 +206,8 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
         <div id="hijri-to-gregorian-workspace" className="flex-1 flex flex-col justify-between space-y-6">
           <div className="grid grid-cols-3 gap-2.5 font-mono">
             <div>
-              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none">
-                Hijri Year
+              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none font-sans">
+                {getTranslation('conv.year', lang, 'Hijri Year')}
               </label>
               <input
                 id="hijri-input-year"
@@ -195,8 +221,8 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
             </div>
 
             <div>
-              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none">
-                Hijri Month
+              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none font-sans">
+                {getTranslation('conv.month', lang, 'Hijri Month')}
               </label>
               <select
                 id="hijri-input-month"
@@ -206,15 +232,15 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
               >
                 {HIJRI_MONTHS.map((item) => (
                   <option key={item.index} value={item.index}>
-                    {item.index} - {item.name} ({item.arabicName})
+                    {item.index} - {getHijriMonthName(item.index - 1)} ({item.arabicName})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none">
-                Hijri Day <span className="text-slate-400 font-light text-[8px] font-sans">max {maxHijriDays}</span>
+              <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1.5 leading-none font-sans">
+                {getTranslation('conv.day', lang, 'Hijri Day')}
               </label>
               <select
                 id="hijri-input-day"
@@ -233,15 +259,15 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
 
           <div className="bg-slate-50 border border-slate-200 p-5 rounded-xs mt-auto">
             <span className="text-[9px] font-mono tracking-widest font-black text-slate-400 uppercase">
-              Resulting Gregorian Date Equivalent
+              {getTranslation('conv.result', lang, 'Resulting Gregorian Date Equivalent')}
             </span>
             {convertedGregorian && (
               <div className="mt-2" id="converted-gregorian-result-box">
-                <span className="block text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                  {convertedGregorian.getDate()} {GREGORIAN_MONTHS[convertedGregorian.getMonth()]?.name} {convertedGregorian.getFullYear()}
+                <span className="block text-xl font-extrabold text-slate-900 tracking-tight leading-tight font-sans">
+                  {convertedGregorian.getDate()} {getGregorianMonthName(convertedGregorian.getMonth())} {convertedGregorian.getFullYear()}
                 </span>
                 
-                <span className="block text-xs font-semibold text-slate-500 mt-2 capitalize">
+                <span className="block text-xs font-semibold text-slate-500 mt-2 capitalize font-sans">
                   {getWeekdayName(convertedGregorian)}, {getArabicWeekdayName(convertedGregorian).split(' ')[0]}
                 </span>
 
@@ -250,7 +276,7 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
                     <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wide">
                       Solar Season
                     </span>
-                    <span className="block text-xs text-slate-700 font-medium">
+                    <span className="block text-xs text-slate-700 font-medium font-sans">
                       {convertedGregorian.getMonth() >= 2 && convertedGregorian.getMonth() <= 4 ? '🌸 Spring' :
                        convertedGregorian.getMonth() >= 5 && convertedGregorian.getMonth() <= 7 ? '☀️ Summer' :
                        convertedGregorian.getMonth() >= 8 && convertedGregorian.getMonth() <= 10 ? '🍂 Autumn' : '❄️ Winter'}
@@ -260,7 +286,7 @@ export default function DateConverter({ calendarType, hijriOffset = 0 }: DateCon
                     <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wide">
                       Julian Day Number (JD)
                     </span>
-                    <span className="block text-xs font-mono text-slate-700 font-bold">
+                    <span className="block text-xs font-mono text-slate-700 font-bold font-mono">
                       {Math.round(hijriToJulian(hijriInputYear, hijriInputMonth, hijriInputDay))}
                     </span>
                   </div>

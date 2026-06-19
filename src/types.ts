@@ -12,6 +12,8 @@ export interface GregorianDate {
 
 export type CalendarType = 'islamic-umalqura' | 'islamic-civil' | 'islamic-tbla' | 'islamic-jakim';
 
+export type AppLanguage = 'ms' | 'en' | 'ar';
+
 export interface CalendarOption {
   id: CalendarType;
   name: string;

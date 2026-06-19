@@ -1,14 +1,20 @@
 import React from 'react';
 import { getLunarPhaseInfo } from '../utils/calendarUtils';
-import { Moon, Info } from 'lucide-react';
+import { AppLanguage } from '../types';
+import { getTranslation } from '../utils/langUtils';
 
 interface LunarPhaseDisplayProps {
   hijriDay: number;
   hijriMonthName: string;
+  lang: AppLanguage;
 }
 
-export default function LunarPhaseDisplay({ hijriDay, hijriMonthName }: LunarPhaseDisplayProps) {
-  const { phaseName, iconType, percentage } = getLunarPhaseInfo(hijriDay);
+export default function LunarPhaseDisplay({ hijriDay, hijriMonthName, lang }: LunarPhaseDisplayProps) {
+  const { iconType, percentage, phaseName } = getLunarPhaseInfo(hijriDay);
+
+  const getLocalizedPhaseName = () => {
+    return getTranslation(`moon.${iconType}`, lang, phaseName);
+  };
 
   // Generate dynamic SVG to represent the exact lunar phase
   // We can draw a beautiful stylized moon using SVG paths depending on the Hijri day.
@@ -100,6 +106,12 @@ export default function LunarPhaseDisplay({ hijriDay, hijriMonthName }: LunarPha
     );
   };
 
+  const getDayPrefix = () => {
+    if (lang === 'ms') return 'Hari';
+    if (lang === 'ar') return 'اليوم';
+    return 'Day';
+  };
+
   return (
     <div id="lunar-phase-container" className="bg-gradient-to-br from-slate-900 to-slate-950 text-slate-100 rounded-xs p-6 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-6">
       {/* Absolute decorative star accents */}
@@ -110,26 +122,38 @@ export default function LunarPhaseDisplay({ hijriDay, hijriMonthName }: LunarPha
       <div className="flex-shrink-0 relative flex items-center justify-center p-2 bg-slate-900/65 rounded-full border border-slate-800 shadow-inner">
         {renderMoonGraphics()}
         <div className="absolute bottom-1 bg-indigo-600 text-white font-mono font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full shadow-md leading-none border border-indigo-400">
-          Day {hijriDay}
+          {getDayPrefix()} {hijriDay}
         </div>
       </div>
 
       <div className="flex-1 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
           <span className="text-[10px] font-mono tracking-[0.16em] text-indigo-400 font-black uppercase">
-            Lunar Alignment
+            {getTranslation('moon.title', lang, 'Lunar Alignment')}
           </span>
           <span className="text-[9px] bg-slate-800 text-slate-300 font-mono font-bold tracking-wider px-2 py-0.5 rounded-xs border border-slate-700/50 uppercase">
-            {Math.round(percentage)}% Illuminated
+            {Math.round(percentage)}% {lang === 'ms' ? 'Bercahaya' : lang === 'ar' ? 'مضاء' : 'Illuminated'}
           </span>
         </div>
         
         <h3 className="text-xl font-extrabold font-sans text-white tracking-tight mb-2">
-          {phaseName}
+          {getLocalizedPhaseName()}
         </h3>
         
         <p className="text-xs text-slate-400 leading-relaxed max-w-lg font-light">
-          The Islamic Calendar month of <strong className="text-indigo-300 font-bold">{hijriMonthName}</strong> is directly synchronization-linked to the lunar cycle. The month begins with the sight of the thin crescent <strong className="text-amber-300 font-normal">Hilal</strong> (Day 1-2), reaches full illumination <strong className="text-amber-300 font-normal">Badr</strong> (Day 14-15), and dims until starting anew.
+          {lang === 'ms' ? (
+            <>
+              Bulan dalam Takwim Islam <strong className="text-indigo-300 font-bold">{hijriMonthName}</strong> dikaitkan secara langsung dengan kitaran fasa bulan. Kitaran bermula dengan kenampakan sabit nipis <strong className="text-amber-300 font-normal">Hilal</strong> (Hari 1-2), mencapai fasa penuh <strong className="text-amber-300 font-normal">Badr</strong> (Hari 14-15), dan menyusut kembali sehingga bermula kitaran baharu.
+            </>
+          ) : lang === 'ar' ? (
+            <>
+              يرتبط الشهر الهجري <strong className="text-indigo-300 font-bold">{hijriMonthName}</strong> ارتباطاً وثيقاً ومباشراً بالدورة القمريّة. حيث يستهل الشهر برؤية هلال <strong className="text-amber-300 font-normal">الهلال</strong> الخفيف (اليوم ١-٢)، ويتكامل ضياءً عند فورة <strong className="text-amber-300 font-normal">البدر</strong> (اليوم ١٤-١٥)، ثم يذبل تدريجياً حتى يبدأ دورة تالية.
+            </>
+          ) : (
+            <>
+              The Islamic Calendar month of <strong className="text-indigo-300 font-bold">{hijriMonthName}</strong> is directly synchronization-linked to the lunar cycle. The month begins with the sight of the thin crescent <strong className="text-amber-300 font-normal">Hilal</strong> (Day 1-2), reaches full illumination <strong className="text-amber-300 font-normal">Badr</strong> (Day 14-15), and dims until starting anew.
+            </>
+          )}
         </p>
       </div>
     </div>
