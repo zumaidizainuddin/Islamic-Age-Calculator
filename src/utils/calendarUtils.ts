@@ -42,16 +42,24 @@ export function getDaysInGregorianMonth(year: number, month: number): number {
 
 // High-fidelity converter using browser Intl API
 export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): HijriDate {
+  let targetCalendar = calendarType;
+  let appliedOffset = hijriOffset;
+
+  if (calendarType === 'islamic-jakim') {
+    targetCalendar = 'islamic-umalqura';
+    appliedOffset = hijriOffset - 1; // JAKIM/MABIMS typically runs 1 day behind Saudi astronomical Umm al-Qura
+  }
+
   try {
-    const formatter = new Intl.DateTimeFormat(`en-US-u-ca-${calendarType}`, {
+    const formatter = new Intl.DateTimeFormat(`en-US-u-ca-${targetCalendar}`, {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
       timeZone: 'UTC'
     });
 
-    // Create Date strictly offset by hijriOffset days using local date parts to avoid timezone shift
-    const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + hijriOffset);
+    // Create Date strictly offset by appliedOffset days using local date parts to avoid timezone shift
+    const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + appliedOffset);
     const utcDate = new Date(Date.UTC(shiftedDate.getFullYear(), shiftedDate.getMonth(), shiftedDate.getDate()));
     const parts = formatter.formatToParts(utcDate);
 
@@ -77,13 +85,21 @@ export function getHijriDateFromGregorian(date: Date, calendarType: CalendarType
   }
 
   // Fallback to Tabular civil algorithm if Intl is unavailable or fails
-  const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + hijriOffset);
+  const shiftedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + appliedOffset);
   const jd = dateToJulian(shiftedDate.getFullYear(), shiftedDate.getMonth() + 1, shiftedDate.getDate());
   return julianToHijri(jd);
 }
 
 // Converts Hijri to Gregorian using rapid Bisection / Binary search
 export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, calendarType: CalendarType = 'islamic-umalqura', hijriOffset: number = 0): Date {
+  let targetCalendar = calendarType;
+  let appliedOffset = hijriOffset;
+
+  if (calendarType === 'islamic-jakim') {
+    targetCalendar = 'islamic-umalqura';
+    appliedOffset = hijriOffset - 1;
+  }
+
   const estimatedGregorianFraction = (hYear - 1) * 0.970225 + (hMonth - 1) * 0.08085 + 622.54;
   const estimatedYear = Math.floor(estimatedGregorianFraction);
   const estimatedMonthFraction = estimatedGregorianFraction - estimatedYear;
@@ -103,11 +119,11 @@ export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, ca
   while (lowDays <= highDays) {
     const midDays = Math.floor((lowDays + highDays) / 2);
     const testDate = new Date(estimatedYear, estimatedMonth, estimatedDay + midDays, 12, 0, 0);
-    const h = getHijriDateFromGregorian(testDate, calendarType, 0); // Must use 0 offset inside the raw lookup
+    const h = getHijriDateFromGregorian(testDate, targetCalendar, 0); // Must use 0 offset inside the raw lookup
     
     if (h.year === hYear && h.month === hMonth && h.day === hDay) {
       // Return a local Date representation at 12:00:00 (midday) and apply offset
-      return new Date(estimatedYear, estimatedMonth, estimatedDay + midDays - hijriOffset, 12, 0, 0);
+      return new Date(estimatedYear, estimatedMonth, estimatedDay + midDays - appliedOffset, 12, 0, 0);
     }
     
     // Calculate difference metrics for approximation in case date is physically impossible (e.g. 30th day on a 29-day month)
@@ -141,7 +157,7 @@ export function hijriToGregorian(hYear: number, hMonth: number, hDay: number, ca
   }
   
   // Return the closest matching physical date if exact target is impossible, applying offset
-  return new Date(estimatedYear, estimatedMonth, estimatedDay + bestCandidate - hijriOffset, 12, 0, 0);
+  return new Date(estimatedYear, estimatedMonth, estimatedDay + bestCandidate - appliedOffset, 12, 0, 0);
 }
 
 // Check how many days are in a given Hijri Month dynamics

@@ -10,7 +10,7 @@ export interface GregorianDate {
   day: number;   // 1-31
 }
 
-export type CalendarType = 'islamic-umalqura' | 'islamic-civil' | 'islamic-tbla';
+export type CalendarType = 'islamic-umalqura' | 'islamic-civil' | 'islamic-tbla' | 'islamic-jakim';
 
 export interface CalendarOption {
   id: CalendarType;

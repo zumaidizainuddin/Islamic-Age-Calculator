@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;450;550;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
@@ -14,4 +16,101 @@
     font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', system-ui, serif;
   }
 }
+
+/* Cosmic Twilight Theme overrides under dark mode selector */
+.dark html, .dark body {
+  background-color: #080c14;
+  color: #cbd5e1;
+}
+
+.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.dark .bg-[#F4F5F7] {
+  background-color: #080c14 !important;
+}
+
+.dark .border-slate-200, 
+.dark .border-slate-150, 
+.dark .border-slate-100,
+.dark .border-slate-250,
+.dark .border-slate-255 {
+  border-color: #1f2937 !important;
+}
+
+.dark .text-slate-900, 
+.dark .text-slate-950, 
+.dark .text-indigo-950,
+.dark .text-slate-850 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800, 
+.dark .text-slate-700,
+.dark .text-slate-750 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600, 
+.dark .text-slate-500,
+.dark .text-slate-550 {
+  color: #94a3b8 !important;
+}
+
+.dark .bg-slate-50, 
+.dark .bg-slate-100 {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-slate-50\/55, 
+.dark .bg-slate-50\/50, 
+.dark .bg-slate-50\/15 {
+  background-color: rgba(31, 41, 55, 0.4) !important;
+}
+
+/* Dual Calendar Grid cells styling */
+.dark .bg-white.border-slate-200:hover {
+  background-color: #1e293b !important;
+}
+
+.dark select, .dark input {
+  background-color: #1f2937 !important;
+  color: #f8fafc !important;
+  border-color: #374151 !important;
+}
+
+.dark select option {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-indigo-50\/45,
+.dark .bg-[#FAF9FD]\/50,
+.dark .bg-indigo-50\/60 {
+  background-color: rgba(30, 41, 59, 0.45) !important;
+  border-color: #312e81 !important;
+}
+
+.dark .text-indigo-900,
+.dark .text-indigo-800,
+.dark .text-indigo-805,
+.dark .text-indigo-750 {
+  color: #c7d2fe !important;
+}
+
+.dark .bg-indigo-50 {
+  background-color: #1e1b4b !important;
+}
+
+.dark .border-indigo-100, 
+.dark .border-indigo-150,
+.dark .border-indigo-155 {
+  border-color: #312e81 !important;
+}
+
+.dark .text-indigo-700 {
+  color: #818cf8 !important;
+}
+
 

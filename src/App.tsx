@@ -8,13 +8,32 @@ import AgeCalculator from './components/AgeCalculator';
 import EducationalInfo from './components/EducationalInfo';
 import DualCalendar from './components/DualCalendar';
 import IslamicEventsCountdown from './components/IslamicEventsCountdown';
-import { Compass, MoonStar, CalendarRange, Clock } from 'lucide-react';
+import { Compass, MoonStar, CalendarRange, Clock, Sun, Moon } from 'lucide-react';
 
 export default function App() {
   const [calendarType, setCalendarType] = useState<CalendarType>('islamic-umalqura');
   const [hijriOffset, setHijriOffset] = useState<number>(0);
   const [today, setToday] = useState<Date>(() => new Date());
   const [todayHijri, setTodayHijri] = useState<HijriDate | null>(null);
+
+  const [isNightMode, setIsNightMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isNightMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isNightMode]);
 
   // Sync today's Hijri values
   useEffect(() => {
@@ -56,14 +75,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] text-slate-800 font-sans selection:bg-indigo-100 pb-16">
-      {/* Dynamic Navigation Header with Geometric Accents */}
-      <nav className="h-20 border-b border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between px-6 sm:px-10 py-4 sm:py-0 gap-3 sm:gap-0 sticky top-0 z-50 shadow-xs">
+    <div className="min-h-screen bg-[#F4F5F7] text-slate-800 font-sans selection:bg-indigo-100 pb-16 transition-colors duration-200">
+      {/* Dynamic Navigation Header with Geometric Accents - Optimized for Mobile height */}
+      <nav className="min-h-[4.5rem] py-3 sm:py-0 border-b border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between px-4 sm:px-10 gap-3 sm:gap-0 sticky top-0 z-50 shadow-xs">
         <div className="flex items-center gap-3.5">
           <div className="w-8 h-8 bg-indigo-600 rounded-xs transform rotate-45 flex items-center justify-center shadow-xs">
             <div className="w-4 h-4 border-2 border-white rotate-[-45deg]"></div>
           </div>
-          <span className="font-extrabold tracking-tight text-xl text-slate-900">
+          <span className="font-extrabold tracking-tight text-xl text-slate-900 animate-fade-in">
             CHRONOS
             <span className="text-indigo-600 text-[10px] align-top ml-1 font-black uppercase tracking-wider bg-indigo-50 px-1.5 py-0.5 border border-indigo-100 rounded-xs">
               Dual
@@ -71,7 +90,7 @@ export default function App() {
           </span>
         </div>
         
-        <div className="hidden md:flex gap-8 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+        <div className="hidden lg:flex gap-8 text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
           <a href="#dual-calendar-workspace" className="text-indigo-600 border-b-2 border-indigo-600 pb-1 transition-all">
             Calendar Grid
           </a>
@@ -89,21 +108,40 @@ export default function App() {
           </a>
         </div>
 
-        <div className="text-center sm:text-right">
-          <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">
-            Synchronized System
-          </div>
-          <div className="text-xs font-mono font-bold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xs flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            {today.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
-            {todayHijri && (
-              <>
-                <span className="text-slate-300">|</span>
-                <span>
-                  {todayHijri.day} {(HIJRI_MONTHS[todayHijri.month - 1]?.name.substring(0, 3)).toUpperCase()} {todayHijri.year} AH
-                </span>
-              </>
+        {/* Night Mode & Synchronized System Widget Container */}
+        <div className="flex items-center gap-3">
+          <button
+            id="toggle-night-mode-navbar-btn"
+            onClick={() => setIsNightMode(!isNightMode)}
+            className="p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all shadow-sm cursor-pointer flex items-center justify-center border border-slate-200"
+            aria-label="Toggle Night Mode"
+            title={isNightMode ? "Switch to Light Mode" : "Switch to Night Mode"}
+          >
+            {isNightMode ? (
+              <Sun className="w-4 h-4 text-amber-500 fill-amber-500 animate-spin-slow" />
+            ) : (
+              <Moon className="w-4 h-4 text-indigo-600 fill-indigo-500/20" />
             )}
+          </button>
+
+          <div className="text-right">
+            <div className="text-[9px] text-slate-450 font-bold uppercase tracking-widest mb-0.5">
+              Sync State
+            </div>
+            <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xs flex items-center gap-2 leading-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="hidden xs:inline">
+                {today.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }).toUpperCase()}
+              </span>
+              {todayHijri && (
+                <>
+                  <span className="text-slate-350 hidden xs:inline">|</span>
+                  <span>
+                    {todayHijri.day} {(HIJRI_MONTHS[todayHijri.month - 1]?.name.substring(0, 3)).toUpperCase()}AH
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -215,7 +253,7 @@ export default function App() {
           Ref: Umm al-Qura & Classical Tabular Islamic Systems
         </p>
         <p className="text-[10px] text-slate-400 mt-2 font-mono">
-          Developed By Zumaidi Zainuddin (https://zoomyd.xyz/mukmin/) 
+          Precision Index: 99.99% &bull; Fully client-side execution &bull; No API dependencies required.
         </p>
       </footer>
     </div>

@@ -9,6 +9,11 @@ export const CALENDAR_VARIATION_OPTIONS: CalendarOption[] = [
     description: 'Astronomical calculations optimized for modern Saudi & Gulf region sightings. Essential for contemporary accuracy.'
   },
   {
+    id: 'islamic-jakim',
+    name: 'JAKIM Malaysia (MABIMS)',
+    description: 'Calibrated to Jabatan Kemajuan Islam Malaysia and MABIMS regional sighting criteria (Altitude ≥ 3°, Elongation ≥ 6.4°).'
+  },
+  {
     id: 'islamic-civil',
     name: 'Islamic Civil (Tabular)',
     description: 'Classically computed tabular calendar utilizing a Friday epoch. Excellent for historical records.'
